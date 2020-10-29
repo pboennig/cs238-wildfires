@@ -21,9 +21,10 @@ class FireGrid:
     are randomly generated. We seed fires randomly, using the fire_prob
     parameter to set the probability of a fire starting/
     """
-    def __init__(self, n, fire_prob=.2):
+    def __init__(self, n, fire_prob=.3):
         S = []
         self.n = n
+        self.reward = 0
         for i in range(n):
             r = []
             for j in range(n):
@@ -68,11 +69,15 @@ class FireGrid:
         for i in range(self.n):
             for j in range(self.n):
                 if self.S[i][j].fire:
-                    if S_prime[i][j].fuel < .05:
+                    percentage_burned = .2 * np.random.random_sample()
+                    if S_prime[i][j].fuel < percentage_burned:
                         S_prime[i][j].fuel = 0
                         S_prime[i][j].fire = False
                     else:
-                        S_prime[i][j].fuel -= .05
+                        S_prime[i][j].fuel -= percentage_burned
+                    property_lost = S_prime[i][j].property * percentage_burned
+                    self.reward -= property_lost 
+                    S_prime[i][j].property -= property_lost 
                 else:
                     threshold = self.neighbors_on_fire(i, j) / 4 * self.S[i][j].dryness * self.S[i][j].fuel
                     S_prime[i][j].fire = np.random.random_sample() < threshold
@@ -80,7 +85,10 @@ class FireGrid:
 
 
 grid = FireGrid(3)
-for _ in range(20):
+for i in range(20):
+    print("Iteration: {}".format(i))
+    print("-"*15)
     grid.show_fire_status()
+    print(grid.reward)
     print(" ")
     grid.transition()
