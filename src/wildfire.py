@@ -1,10 +1,11 @@
 import numpy as np
 
 class StateRegion:
-    def __init__(self, fire, dryness, fuel, property, resources):
+    def __init__(self, fire, dryness, fuel, wind, property, resources):
         self.fire = fire # a Boolean representing if the area is currently on fire
         self.dryness = dryness # a percentage representing how dry the region is
         self.fuel = fuel # a vale from 0 to 100 representing how much flammable material there is in this region 
+        self.wind = wind # a percentage representing the windiness
         self.property = property # a number from 0 to 100 representing how valuable the property on the land is
         self.resources = resources # a Boolean, True if we've allocated resources
     
@@ -13,6 +14,17 @@ class StateRegion:
     def __repr__(self):
         return "(Fire: {}, Dryness: {}, Fuel: {}, Property: {}, Resources: {})".format(self.fire, self.dryness, self.fuel, self.property, self.resources)
 
+class ObservationRegion:
+    def __init__(self, state_region, fuel_sigma=.05, dryness_sigma=.05):
+        self.fire = state_region.fire
+        self.resources = state_region.resources
+        self.property = state_region.property
+        self.wind = state_region.wind # can perfectly measure wind
+        self.fuel = state_region.fuel + np.random.normal(scale=fuel_sigma)
+        self.dryness = state_region.dryness + np.random.normal(scale=dryness_sigma)
+
+    def __repr__(self):
+        return "(Fire: {}, Dryness: {}, Fuel: {}, Property: {}, Resources: {})".format(self.fire, self.dryness, self.fuel, self.property, self.resources)
 
 class FireGrid:
     """
@@ -21,7 +33,7 @@ class FireGrid:
     are randomly generated. We seed fires randomly, using the fire_prob
     parameter to set the probability of a fire starting/
     """
-    def __init__(self, n, fire_prob=.3):
+    def __init__(self, n):
         S = []
         self.n = n
         self.reward = 0
@@ -29,12 +41,13 @@ class FireGrid:
         for i in range(n):
             r = []
             for j in range(n):
-                fire = np.random.random_sample() < fire_prob
+                fire = False 
                 dryness = np.random.random_sample()
                 property = 100 * np.random.random_sample()
                 fuel = np.random.random_sample()
+                wind = np.random.random_sample()
                 resources = False
-                r.append(StateRegion(fire, dryness, fuel, property, resources))
+                r.append(StateRegion(fire, dryness, fuel, wind, property, resources))
             S.append(r)
 
         self.S = S
@@ -50,6 +63,10 @@ class FireGrid:
     def show_fuel_status(self):
         for row in self.S:
             print(' '.join([str(round(cell.fuel, 2)) for cell in row]))
+
+    def show_wind(self):
+        for row in self.S:
+            print(' '.join([str(round(cell.wind, 2)) for cell in row]))
 
     def show_resources(self):
         symbol = {True: '0', False: '_'}
@@ -93,11 +110,21 @@ class FireGrid:
                     self.reward -= property_lost 
                     S_prime[i][j].property -= property_lost 
                 else:
-                    threshold = (self.neighbors_on_fire(i, j) + 1) / 5 * self.S[i][j].dryness * self.S[i][j].fuel
+                    threshold = (self.neighbors_on_fire(i, j) + 1) / 5 * self.S[i][j].dryness * self.S[i][j].fuel + .1 * np.sqrt(self.S[i][j].wind)
                     threshold -= .5 * np.random.random_sample() * self.S[i][j].resources # if using resources, can reduce threshold by .5
                     S_prime[i][j].fire = np.random.random_sample() < threshold
+                S_prime[i][j].wind = min(self.S[i][j].wind + .1 * np.random.random_sample() - .05, .99)
         self.S = S_prime
         self.reward -= self.resource_cost
+
+    def observation(self):
+        O = []
+        for i in range(self.n):
+            r = []
+            for j in range(self.n):
+                r.append(ObservationRegion(self.S[i][j]))
+            O.append(r)
+        return O
 
     """
     Actions to remove or add resources to a specific cell.
