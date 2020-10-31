@@ -94,9 +94,7 @@ class FireGrid:
                     S_prime[i][j].property -= property_lost 
                 else:
                     threshold = (self.neighbors_on_fire(i, j) + 1) / 5 * self.S[i][j].dryness * self.S[i][j].fuel
-                    threshold -= .5 * np.random.random_sample() * self.S[i][j].resources # if using resources may be able to reduce fire odds by 50%
-                    if self.S[i][j].resources:
-                        print(threshold)
+                    threshold -= .5 * np.random.random_sample() * self.S[i][j].resources # if using resources, can reduce threshold by .5
                     S_prime[i][j].fire = np.random.random_sample() < threshold
         self.S = S_prime
         self.reward -= self.resource_cost
