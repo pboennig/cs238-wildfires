@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-
+np.seterr(all='raise')
 class StateRegion:
     def __init__(self, fire, dryness, fuel, wind, property):
         self.fire = fire # a Boolean representing if the area is currently on fire
@@ -32,48 +32,17 @@ class FireGrid:
     are randomly generated. We seed fires randomly, using the fire_prob
     parameter to set the probability of a fire starting/
     """
-    def __init__(self, n):
-        S = []
-        self.resource_assignment = np.zeros((n, n), dtype=bool)
+    def __init__(self, n, cost_per_resource=.8):
         self.n = n
+        self.fire = np.zeros((n, n), dtype=bool)
+        self.wind = np.random.rand(n, n)
+        self.fuel = np.random.rand(n, n)
+        self.dryness = np.random.rand(n, n)
+        self.property = 100 * np.random.rand(n, n)
+        self.resource_assignment = np.zeros((n, n), dtype=bool)
         self.reward = 0
-        self.resource_cost = 0
-        self.cost_per_resource = .8
-        self.A = self.all_possible_actions()
-        for i in range(n):
-            r = []
-            for j in range(n):
-                fire = False 
-                dryness = np.random.random_sample()
-                property = 100 * np.random.random_sample()
-                fuel = np.random.random_sample()
-                wind = np.random.random_sample()
-                r.append(StateRegion(fire, dryness, fuel, wind, property))
-            S.append(r)
+        self.cost_per_resource = cost_per_resource 
 
-        self.S = S
-
-    """
-    Helper functions to display the fires, fuel, and resources.
-    """
-    def show_fires(self):
-        symbol = {True: 'X', False: '_'}
-        for row in self.S:
-            print(' '.join([symbol[cell.fire] for cell in row]))
-
-    def show_fuel_status(self):
-        for row in self.S:
-            print(' '.join([str(round(cell.fuel, 2)) for cell in row]))
-
-    def show_wind(self):
-        for row in self.S:
-            print(' '.join([str(round(cell.wind, 2)) for cell in row]))
-
-    def all_possible_actions(self):
-        l = [False, True]
-        possible_true_false_sequences = list(itertools.product(l, repeat=self.n**2))
-        A = [np.asarray(l).reshape(self.n, self.n) for l in possible_true_false_sequences]
-        return A
 
     """
     Helper function to calculate the number of neighboring cells on fire.
@@ -96,43 +65,24 @@ class FireGrid:
     of burning fires and using resources.
     """
     def transition(self):
-        S_prime = self.S
         new_reward = 0.0 
-        for i in range(self.n):
-            for j in range(self.n):
-                if self.S[i][j].fire:
-                    # for now, cannot put out fires but only contain/prevent them
-                    percentage_burned = .2 * np.random.random_sample()
-                    if S_prime[i][j].fuel < percentage_burned:
-                        # we're out of fuel
-                        S_prime[i][j].fuel = 0
-                        S_prime[i][j].fire = False
-                    else:
-                        S_prime[i][j].fuel -= percentage_burned
-                    property_lost = S_prime[i][j].property * percentage_burned
-                    new_reward -= property_lost 
-                    S_prime[i][j].property -= property_lost 
-                else:
-                    threshold = (self.neighbors_on_fire(i, j) + 1) / 5 * self.S[i][j].dryness * self.S[i][j].fuel + .1 * np.sqrt(self.S[i][j].wind)
-                    threshold -= .5 * np.random.random_sample() * self.resource_assignment[i, j] # if using resources, can reduce threshold by .5
-                    S_prime[i][j].fire = np.random.random_sample() < threshold
-                S_prime[i][j].wind = min(self.S[i][j].wind + .1 * np.random.random_sample() - .05, .99)
-        self.S = S_prime
-        new_reward -= self.resource_cost
+        percentage_burned = .2 * np.random.rand(self.n, self.n) * self.fire
+        self.fuel = np.minimum(self.fuel - percentage_burned, np.zeros((self.n, self.n)))
+        self.fire = self.fire * (self.fuel != 0) # if out of fuel, no fire
+        new_reward -= np.sum(self.property * percentage_burned)
+        self.property -= self.property * percentage_burned
+        threshold = self.dryness * self.fuel + .1 * np.sqrt(self.wind)
+        threshold -= .5 * np.random.rand(self.n, self.n) * self.resource_assignment
+        self.fire = np.maximum(self.fire, np.random.rand(self.n, self.n) < threshold)
+        self.wind = np.clip(self.wind + .1 * np.random.randn(self.n, self.n), .01, .99)
+        new_reward -= np.sum(self.resource_assignment) * self.cost_per_resource 
         self.reward += new_reward
         return new_reward
 
 
     def observation(self):
-        O = []
-        for i in range(self.n):
-            r = []
-            for j in range(self.n):
-                r.append(ObservationRegion(self.S[i][j]))
-            O.append(r)
-        return (O, self.resource_assignment)
+        return (self.fire, self.property + 3 * np.random.randn(self.n, self.n), self.resource_assignment)
 
 
     def set_resources(self, arrangement):
         self.resource_assignment = arrangement
-        self.resource_cost = self.cost_per_resource * np.sum(self.resource_assignment) # chosen by evaluating random policy
