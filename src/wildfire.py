@@ -1,5 +1,6 @@
 import numpy as np
-import itertools
+import scipy.signal
+
 np.seterr(all='raise')
 class StateRegion:
     def __init__(self, fire, dryness, fuel, wind, property):
@@ -42,6 +43,7 @@ class FireGrid:
         self.resource_assignment = np.zeros((n, n), dtype=bool)
         self.reward = 0
         self.cost_per_resource = cost_per_resource 
+        self.kernel = np.array([[0, 1, 0,], [1, 0, 1], [0, 1, 0]]) # only direct neighbors
 
 
     """
@@ -71,7 +73,8 @@ class FireGrid:
         self.fire = self.fire * (self.fuel != 0) # if out of fuel, no fire
         new_reward -= np.sum(self.property * percentage_burned)
         self.property -= self.property * percentage_burned
-        threshold = self.dryness * self.fuel + .1 * np.sqrt(self.wind)
+        neighbors_on_fire = scipy.signal.convolve(self.fire, self.kernel, mode='same')
+        threshold = (neighbors_on_fire + 1) / 5 *self.dryness * self.fuel + .1 * np.sqrt(self.wind)
         threshold -= .5 * self.resource_assignment
         self.fire = np.maximum(self.fire, np.random.rand(self.n, self.n) < threshold)
         self.wind = np.clip(self.wind + .1 * np.random.randn(self.n, self.n), .01, .99)

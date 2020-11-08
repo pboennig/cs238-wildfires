@@ -3,7 +3,7 @@ from wildfire import FireGrid
 import matplotlib.pyplot as plt
 
 
-def sim_random_policy(place_prob, cost_per_resource, grid_size=2, num_sims=50, simulation_depth=10):
+def sim_random_policy(place_prob, cost_per_resource, grid_size=3, num_sims=50, simulation_depth=10):
     rewards = []
     for iter in range(num_sims):
         grid = FireGrid(grid_size)
