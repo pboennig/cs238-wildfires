@@ -1,5 +1,10 @@
 from wildfire import FireGrid
 import numpy as np
+import os
+import matplotlib as mpl
+if os.environ.get('DISPLAY','') == '':
+    print('no display found. Using non-interactive Agg backend')
+    mpl.use('Agg')
 import matplotlib.pyplot as plt
 import itertools
 import copy
@@ -29,8 +34,8 @@ def sparse_sampling(A, grid, d, m=5, gamma=.95):
             best = (a, u)
     return best
 
-def simulate_sparse(n, m, num_sims=5, simulation_depth=10, d=4):
-    print(f'm = {m}')
+def simulate_sparse(n, m, num_sims=5, simulation_depth=10, d=2):
+    print('m = {}'.format(m))
     performance = []
     A = all_possible_actions(n)
     for i in range(num_sims):
