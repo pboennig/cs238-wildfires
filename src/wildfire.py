@@ -72,7 +72,7 @@ class FireGrid:
         new_reward -= np.sum(self.property * percentage_burned)
         self.property -= self.property * percentage_burned
         threshold = self.dryness * self.fuel + .1 * np.sqrt(self.wind)
-        threshold -= .5 * np.random.rand(self.n, self.n) * self.resource_assignment
+        threshold -= .5 * self.resource_assignment
         self.fire = np.maximum(self.fire, np.random.rand(self.n, self.n) < threshold)
         self.wind = np.clip(self.wind + .1 * np.random.randn(self.n, self.n), .01, .99)
         new_reward -= np.sum(self.resource_assignment) * self.cost_per_resource 
