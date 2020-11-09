@@ -49,8 +49,12 @@ def simulate_sparse(n, m, num_sims=10, simulation_depth=10, d=2):
 
 ms = range(2, 11, 2)
 performances = [np.mean(simulate_sparse(2, m)) for m in ms]
-plt.plot(ms, performances)
-plt.xlabel("m (number of samples)")
+cost_per_resource = np.linspace(.5, 1.5, num=5)
+for cpr in cost_per_resource:
+    rewards = [simulate_sparse(m,cpr) for m in ms] 
+    plt.plot(ms, [np.mean(reward) for reward in rewards], label=f'{cpr}')
+plt.legend(title="cost per resource")
 plt.ylabel("average reward")
-plt.title("performance of sparse sampling")
+plt.xlabel("m (number of samples)")
+plt.title("Performance of sparse sampling")
 plt.savefig("../figures/sparse_sample.png")
