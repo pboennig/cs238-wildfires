@@ -1,4 +1,4 @@
-from wildfire import FireGrid
+from wildfire import FireGrid, all_possible_actions
 import numpy as np
 import os
 import matplotlib as mpl
@@ -10,14 +10,13 @@ import itertools
 import copy
 
 def approximate_utility(grid):
-    return np.sum(grid.observation()[1] * grid.observation()[2])
+    return np.sum(grid.fire * grid.property)
 
-def all_possible_actions(n):
-    l = [False, True]
-    possible_true_false_sequences = list(itertools.product(l, repeat=n**2))
-    A = [np.asarray(l).reshape(n, n) for l in possible_true_false_sequences]
-    return A
 
+"""
+Sparse sampling algorithm. Choose best action from
+A based off expected value of m samples.
+"""
 def sparse_sampling(A, grid, d, m=5, gamma=.95):
     if d <= 0:
         return (None, approximate_utility(grid))

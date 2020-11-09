@@ -3,6 +3,10 @@ from wildfire import FireGrid
 import matplotlib.pyplot as plt
 
 
+"""
+Simulate an entirely random policy with place_prob. Runs simulation num_sims time for simulation_depth
+transitions.
+"""
 def sim_random_policy(place_prob, cost_per_resource, grid_size=2, num_sims=50, simulation_depth=10):
     rewards = []
     for iter in range(num_sims):

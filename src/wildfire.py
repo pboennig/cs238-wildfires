@@ -4,43 +4,22 @@ import itertools
 
 np.seterr(all='raise')
 
+"""
+A helper function to generate all possible actions on
+a n x n grid. Note that is O(2^{n^2}), so large values of
+n will lead to the process hanging.
+"""
 def all_possible_actions(n):
     l = [False, True]
     possible_true_false_sequences = list(itertools.product(l, repeat=n**2))
     A = [np.asarray(l).reshape(n, n) for l in possible_true_false_sequences]
     return A
 
-
-class StateRegion:
-    def __init__(self, fire, dryness, fuel, wind, property):
-        self.fire = fire # a Boolean representing if the area is currently on fire
-        self.dryness = dryness # a percentage representing how dry the region is
-        self.fuel = fuel # a vale from 0 to 100 representing how much flammable material there is in this region 
-        self.wind = wind # a percentage representing the windiness
-        self.property = property # a number from 0 to 100 representing how valuable the property on the land is
-    
-    def __str__(self):
-        return "Fire: {}, Dryness: {}, Fuel: {}, Property: {}, Resources: {}".format(self.fire, self.dryness, self.fuel, self.property, self.resources)
-    def __repr__(self):
-        return "(Fire: {}, Dryness: {}, Fuel: {}, Property: {}, Resources: {})".format(self.fire, self.dryness, self.fuel, self.property, self.resources)
-
-class ObservationRegion:
-    def __init__(self, state_region, fuel_sigma=.05, dryness_sigma=.05):
-        self.fire = state_region.fire
-        self.wind = state_region.wind # can perfectly measure wind
-        self.fuel = state_region.fuel + np.random.normal(scale=fuel_sigma)
-        self.dryness = state_region.dryness + np.random.normal(scale=dryness_sigma)
-        self.property = state_region.property
-
-    def __repr__(self):
-        return "(Fire: {}, Dryness: {}, Fuel: {}, Property: {})".format(self.fire, self.dryness, self.fuel, self.property)
-
 class FireGrid:
     """
     Randomly generate a n x n grid of StateRegion cells.
     All cells have no resources to start, and the other attributes
-    are randomly generated. We seed fires randomly, using the fire_prob
-    parameter to set the probability of a fire starting/
+    are randomly generated. 
     """
     def __init__(self, n, cost_per_resource=1):
         self.n = n
@@ -52,28 +31,14 @@ class FireGrid:
         self.resource_assignment = np.zeros((n, n), dtype=bool)
         self.reward = 0
         self.cost_per_resource = cost_per_resource 
-        self.kernel = np.array([[0, 1, 0,], [1, 0, 1], [0, 1, 0]]) # only direct neighbors
+        self.kernel = np.array([[0, 1, 0,], [1, 0, 1], [0, 1, 0]]) # only direct neighbors influence fire risk
 
-
-    """
-    Helper function to calculate the number of neighboring cells on fire.
-    """ 
-    def neighbors_on_fire(self, i, j):
-        num_neighbors = 0
-        if i - 1 >= 0:
-            num_neighbors += self.S[i-1][j].fire
-        if i + 1 < self.n:
-            num_neighbors += self.S[i+1][j].fire
-        if j - 1 >= 0:
-            num_neighbors += self.S[i][j-1].fire
-        if j + 1 < self.n:
-            num_neighbors += self.S[i][j+1].fire
-        return num_neighbors
 
     """
     Transition function that changes the state of the grid based on existing fire conditions,
     the dryness of the cell, and our resources. Also updates our reward to include the cost
-    of burning fires and using resources.
+    of burning fires and using resources. Returns the reward from this particular step while updating 
+    the current object.
     """
     def transition(self):
         new_reward = 0.0 
@@ -92,9 +57,8 @@ class FireGrid:
         return new_reward
 
 
-    def observation(self):
-        return (self.fire, self.property + 3 * np.random.randn(self.n, self.n), self.resource_assignment)
-
-
+    """
+    Set the resource assignment using a grid of Booleans.
+    """
     def set_resources(self, arrangement):
         self.resource_assignment = arrangement

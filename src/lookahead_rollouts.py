@@ -3,6 +3,9 @@ from wildfire import FireGrid, all_possible_actions
 import matplotlib.pyplot as plt
 import copy
 
+"""
+Follow a random policy until depth = 0. Return discounted utility.
+"""
 def random_rollout(grid, depth, gamma=.95, pp=.5):
     if depth <= 0:
         return 0.0
@@ -12,10 +15,17 @@ def random_rollout(grid, depth, gamma=.95, pp=.5):
         r = grid.transition()
         return r + gamma * random_rollout(grid, depth - 1, gamma=gamma, pp=pp)
 
+"""
+Estimate utility as the product of property and fire.
+"""
 def approximate_utility(grid):
-    return np.sum(grid.observation()[1] * grid.observation()[2])
+    return np.sum(grid.property * grid.fire)
 
 
+"""
+One step lookahead using random rollout. Return the action with the highest average
+utility ovver m samples.
+"""
 def lookahead(A, grid, d, m=5, gamma=.95):
     if d <= 0:
         return (None, approximate_utility(grid))
