@@ -34,7 +34,7 @@ def sparse_sampling(A, grid, d, m=5, gamma=.95):
             best = (a, u)
     return best
 
-def simulate_sparse(n, m, num_sims=5, simulation_depth=10, d=2):
+def simulate_sparse(n, m, num_sims=10, simulation_depth=10, d=2):
     print('m = {}'.format(m))
     performance = []
     A = all_possible_actions(n)
@@ -47,7 +47,7 @@ def simulate_sparse(n, m, num_sims=5, simulation_depth=10, d=2):
         performance.append(grid.reward)
     return performance
 
-ms = range(2, 10, 2)
+ms = range(2, 11, 2)
 performances = [np.mean(simulate_sparse(2, m)) for m in ms]
 plt.plot(ms, performances)
 plt.xlabel("m (number of samples)")
