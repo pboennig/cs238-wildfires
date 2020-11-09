@@ -34,12 +34,12 @@ def sparse_sampling(A, grid, d, m=5, gamma=.95):
             best = (a, u)
     return best
 
-def simulate_sparse(n, m, num_sims=10, simulation_depth=10, d=2):
+def simulate_sparse(n, m, cpr=1, num_sims=10, simulation_depth=10, d=2):
     print('m = {}'.format(m))
     performance = []
     A = all_possible_actions(n)
     for i in range(num_sims):
-        grid = FireGrid(n)
+        grid = FireGrid(n, cost_per_resource=cpr)
         for t in range(simulation_depth):
             a, _ = sparse_sampling(A, grid, d, m=m)
             grid.set_resources(a)
@@ -51,8 +51,8 @@ ms = range(2, 11, 2)
 performances = [np.mean(simulate_sparse(2, m)) for m in ms]
 cost_per_resource = np.linspace(.5, 1.5, num=5)
 for cpr in cost_per_resource:
-    rewards = [simulate_sparse(m,cpr) for m in ms] 
-    plt.plot(ms, [np.mean(reward) for reward in rewards], label=f'{cpr}')
+    rewards = [simulate_sparse(2, m, cpr=cpr) for m in ms] 
+    plt.plot(ms, [np.mean(reward) for reward in rewards], label="{}".format(cpr))
 plt.legend(title="cost per resource")
 plt.ylabel("average reward")
 plt.xlabel("m (number of samples)")
