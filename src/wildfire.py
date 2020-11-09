@@ -1,7 +1,16 @@
 import numpy as np
 import scipy.signal
+import itertools
 
 np.seterr(all='raise')
+
+def all_possible_actions(n):
+    l = [False, True]
+    possible_true_false_sequences = list(itertools.product(l, repeat=n**2))
+    A = [np.asarray(l).reshape(n, n) for l in possible_true_false_sequences]
+    return A
+
+
 class StateRegion:
     def __init__(self, fire, dryness, fuel, wind, property):
         self.fire = fire # a Boolean representing if the area is currently on fire
