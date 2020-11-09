@@ -33,7 +33,7 @@ class FireGrid:
     are randomly generated. We seed fires randomly, using the fire_prob
     parameter to set the probability of a fire starting/
     """
-    def __init__(self, n, cost_per_resource=.8):
+    def __init__(self, n, cost_per_resource=1):
         self.n = n
         self.fire = np.zeros((n, n), dtype=bool)
         self.wind = np.random.rand(n, n)
